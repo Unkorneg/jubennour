@@ -1,0 +1,17 @@
+{% extends "admin/base.html" %}
+
+
+{% block content %}
+<div class="container">
+
+  <a href="/admin/word/new" class="btn btn-primary">Ajouter un nouveau mot</a>
+
+  <ul>
+    {% for word in entry_list %}
+    <li>
+      {{ word.canonical_form.written_form }}
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}
