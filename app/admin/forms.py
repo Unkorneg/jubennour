@@ -1,58 +1,30 @@
 from flask_wtf import FlaskForm
 from wtforms import (
     StringField,
+    TextAreaField,
     PasswordField,
-    BooleanField,
     SubmitField,
+    BooleanField,
     SelectField,
+    IntegerField,
 )
-from wtforms.validators import ValidationError, DataRequired, Email, EqualTo
-from app.models import (
-    Language,
-    Lexicon,
-    LexicalEntry,
-    Phrase,
-    Word,
-    Part,
-    FormMoodsEnum,
-    FormTensesEnum,
-    FormPersonsEnum,
-    FormGendersEnum,
-    FormNumbersEnum,
-    PartOfSpeechEnum,
-    LexicalForm,
-    LexicalSense,
-)
+from wtforms.validators import DataRequired, Length, Email, EqualTo
 
 
-class NewWordForm(FlaskForm):
-    canonical_form_written = StringField(
-        "Entrée", validators=[DataRequired("Veuillez remplir ce champ")]
+class NewEntryForm(FlaskForm):
+    written_form = StringField(
+        "Written form", validators=[DataRequired(), Length(min=1, max=64)]
     )
-    lexicon = SelectField(
-        "Lexique",
-        validators=[DataRequired()],
+    phonetic_form = StringField(
+        "Phonetic form", validators=[DataRequired(), Length(min=1, max=64)]
     )
-    part_of_speech = SelectField(
-        "Catégorie Morphosyntaxique",
-        choices=[choice.value for choice in PartOfSpeechEnum],
+    language = StringField(
+        "Language", validators=[DataRequired(), Length(min=1, max=64)]
     )
-
-    canonical_form_alt = StringField("Forme alternative")
-    canonical_form_phonetic = StringField("Forme phonétique")
-    canonical_form_gender = SelectField(
-        "Genre", choices=[""] + [gender.value for gender in FormGendersEnum]
+    lexicon = StringField(
+        "Lexicon", validators=[DataRequired(), Length(min=1, max=64)]
     )
-    canonical_form_number = SelectField(
-        "Nombre", choices=[""] + [number.value for number in FormNumbersEnum]
+    orthography = StringField(
+        "Orthography", validators=[DataRequired(), Length(min=1, max=64)]
     )
-    canonical_form_mood = SelectField(
-        "Mode", choices=[""] + [mood.value for mood in FormMoodsEnum]
-    )
-    canonical_form_tense = SelectField(
-        "Temps", choices=[""] + [tense.value for tense in FormTensesEnum]
-    )
-    canonical_form_person = SelectField(
-        "Personne", choices=[""] + [person.value for person in FormPersonsEnum]
-    )
-    submit = SubmitField()
+    submit = SubmitField("Submit")

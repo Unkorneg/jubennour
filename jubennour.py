@@ -2,12 +2,13 @@ from app import create_app, db
 from app.models import (
     Language,
     Lexicon,
+    Orthography,
+    FormRepresentation,
+    WordForm,
+    Lemma,
     LexicalEntry,
-    LexicalForm,
-    LexicalSense,
-    Word,
-    Phrase,
-    Part,
+    Sense,
+    SenseAxis,
 )
 
 app = create_app()
@@ -19,10 +20,14 @@ def make_shell_context():
         "db": db,
         "Language": Language,
         "Lexicon": Lexicon,
+        "Orthography": Orthography,
+        "FormRepresentation": FormRepresentation,
+        "WordForm": WordForm,
+        "Lemma": Lemma,
         "LexicalEntry": LexicalEntry,
-        "LexicalForm": LexicalForm,
-        "LexicalSense": LexicalSense,
-        "Word": Word,
-        "Phrase": Phrase,
-        "Part": Part,
+        "Sense": Sense,
+        "SenseAxis": SenseAxis,
     }
+
+if __name__ == "__main__":
+    create_app().run()
