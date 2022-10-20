@@ -5,7 +5,16 @@ from app import db
 
 # models based on the Lexical Markup Framework (LMF) https://lirics.loria.fr/doc_pub/LMF_revision_14.pdf
 
+class GlobalInformations(db.Model):
+    __tablename__ = "global_informations"
+    id = db.Column(db.Integer, primary_key=True)
 
+
+class LexicalRessource(db.Model):
+    __tablename__ = "lexical_ressources"
+    id = db.Column(db.Integer, primary_key=True)
+    info = 
+    
 class Language(db.Model):
     __tablename__ = "languages"
     id = db.Column(db.Integer, primary_key=True)
