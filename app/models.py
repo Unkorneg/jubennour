@@ -3,7 +3,9 @@ import enum
 from flask import current_app, url_for
 from app import db
 
-# models based on the Lexical Markup Framework (LMF) https://lirics.loria.fr/doc_pub/LMF_revision_14.pdf
+# models based on the Lexical Markup Framework (LMF)
+# https://lirics.loria.fr/doc_pub/LMF_revision_14.pdf
+
 
 class GlobalInformations(db.Model):
     __tablename__ = "global_informations"
@@ -13,13 +15,26 @@ class GlobalInformations(db.Model):
 class LexicalRessource(db.Model):
     __tablename__ = "lexical_ressources"
     id = db.Column(db.Integer, primary_key=True)
-    info = 
-    
+    lexicons = db.relationship("LexicalEntry", backref="lexical_ressource")
+
+
+class Orthography(db.Model):
+    __tablename__ = "orthographies"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), index=True, unique=True)
+    language_id = db.Column(db.Integer, db.ForeignKey("languages.id"))
+
+    def __repr__(self):
+        return "<Orthography {}>".format(self.name)
+
+
 class Language(db.Model):
     __tablename__ = "languages"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), index=True, unique=True)
-    code = db.Column(db.String(64), index=True, unique=True)
+    code_iso = db.Column(db.String(3), index=True, unique=True)
+    orthographies = db.relationship("Orthography", backref="language")
+    lexicons = db.relationship("Lexicon", backref="language")
 
     def __repr__(self):
         return "<Language {}>".format(self.name)
@@ -29,35 +44,19 @@ class Lexicon(db.Model):
     __tablename__ = "lexicons"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), index=True, unique=True)
+    lexical_ressource_id = db.Column(db.Integer, db.ForeignKey("lexical_ressources.id"))
     language_id = db.Column(db.Integer, db.ForeignKey("languages.id"))
-    language = db.relationship(
-        "Language", backref=db.backref("lexicons", lazy="dynamic")
-    )
 
     def __repr__(self):
         return "<Lexicon {}>".format(self.name)
 
 
-class Orthography(db.Model):
-    __tablename__ = "orthographies"
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64), index=True, unique=True)
-    language_id = db.Column(db.Integer, db.ForeignKey("languages.id"))
-    language = db.relationship(
-        "Language", backref=db.backref("orthographies", lazy="dynamic")
-    )
-
-    def __repr__(self):
-        return "<Orthography {}>".format(self.name)
-
-
 class FormRepresentation(db.Model):
     __tablename__ = "form_representations"
     id = db.Column(db.Integer, primary_key=True)
+    language_id = db.Column(db.Integer, db.ForeignKey("languages.id"))
     written_form = db.Column(db.String(64), index=True, unique=True)
-    orthography = db.relationship(
-        "Orthography", backref=db.backref("form_representations", lazy="dynamic")
-    )
+    orthography_id = db.Column(db.Integer, db.ForeignKey("orthographies.id"))
 
     def __repr__(self):
         return "<FormRepresentation {}>".format(self.written_form)
@@ -66,8 +65,9 @@ class FormRepresentation(db.Model):
 @db.declarative_mixin
 class LexicalFormMixin:
     phonetic_form = db.Column(db.String(64), index=True)
+
     @db.declared_attr
-    def form_representation(cls):
+    def form_representations(cls):
         return db.relationship("FormRepresentation", backref="lexical_form")
 
 
@@ -87,27 +87,32 @@ class WordForm(db.Model, LexicalFormMixin):
     form_representation_id = db.Column(
         db.Integer, db.ForeignKey("form_representations.id")
     )
-    form_representation = db.relationship(
-        "FormRepresentation", backref=db.backref("word_forms", lazy="dynamic")
-    )
 
     def __repr__(self):
         return "<WordForm {}>".format(self.written_form)
 
-sense_sense_axies = db.Table(
-    "sense_sense_axes",
-    db.Column("sense_id", db.Integer, db.ForeignKey("senses.id")),
-    db.Column("sense_axis_id", db.Integer, db.ForeignKey("sense_axes.id")),
-)
+
+class ExampleAxis(db.Model):
+    __tablename__ = "example_axes"
+    id = db.Column(db.Integer, primary_key=True)
+    examples = db.relationship("SenseExample", backref="example_axis")
+
+
+class SenseExample(db.Model):
+    __tablename__ = "sense_examples"
+    id = db.Column(db.Integer, primary_key=True)
+    sense_id = db.Column(db.Integer, db.ForeignKey("senses.id"))
+    example_axis_id = db.Column(db.Integer, db.ForeignKey("example_axes.id"))
+
+
 class SenseAxis(db.Model):
     __tablename__ = "sense_axes"
     id = db.Column(db.Integer, primary_key=True)
-    senses = db.relationship(
-        "Sense", secondary=sense_sense_axies, back_populates="sense_axes"
-    )
+    senses = db.relationship("Sense", backref="sense_axis")
 
     def __repr__(self):
         return "<SenseAxis {}>".format(self.id)
+
 
 class Sense(db.Model):
     __tablename__ = "senses"
@@ -115,9 +120,7 @@ class Sense(db.Model):
     lexical_entry_id = db.Column(db.Integer, db.ForeignKey("lexical_entries.id"))
     sense_number = db.Column(db.Integer, index=True)
     definition = db.Column(db.String(256), index=True)
-    sense_axes = db.relationship(
-        "SenseAxis", secondary=sense_sense_axies, back_populates="senses"
-    )
+    sense_axis_id = db.Column(db.Integer, db.ForeignKey("sense_axes.id"))
 
     def __repr__(self):
         return "<Sense {}>".format(
@@ -175,6 +178,7 @@ class LexicalEntry(db.Model):
     lemma = db.relationship(
         "Lemma", backref="lexical_entry", uselist=False, lazy="dynamic"
     )
+    word_forms = db.relationship("WordForm", backref="lexical_entry")
     part_of_speech = db.Column(db.Enum(PartOfSpeech), index=True)
     senses = db.relationship(
         "Sense", backref="lexical_entry", uselist=False, lazy="dynamic"
@@ -188,8 +192,3 @@ class LexicalEntry(db.Model):
 
     def __repr__(self):
         return "<LexicalEntry {}>".format(self.lemma.written_form)
-
-
-
-
-
